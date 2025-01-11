@@ -1,0 +1,6 @@
+name: PlayerIDCounter
+version: '1.0'
+main: com.example.playeridcounter.PlayerIDCounter
+api-version: '1.21'
+load: STARTUP
+softdepend: [ "PlaceholderAPI" ]
