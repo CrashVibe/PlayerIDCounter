@@ -1,4 +1,4 @@
-plugin_enabled: "&a插件已启用！"
-plugin_disabled: "&c插件已禁用！"
-papi_not_found: "&cPlaceholderAPI 未找到，功能可能无法使用！"
-welcome_message: "&e欢迎！你的ID是： {id}"
+plugin_enabled: "§a插件已启用！"
+plugin_disabled: "§c插件已禁用！"
+papi_not_found: "§cPlaceholderAPI 未找到，功能可能无法使用！"
+welcome_message: "§e欢迎！你的ID是： {id}"

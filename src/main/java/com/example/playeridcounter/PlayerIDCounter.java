@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +22,6 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
     // 文件对象，用于存储玩家数据和语言文件
     private File playersFile;
     private FileConfiguration playersConfig;
-    private File langFile;
     private FileConfiguration langConfig;
 
     // 存储玩家ID的映射表，UUID对应玩家ID
@@ -50,7 +50,7 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(this, this);
 
         // 如果 PlaceholderAPI 插件可用，注册扩展
-        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new IDPlaceholderExpansion(this).register();
         } else {
             getLogger().warning(getLang("papi_not_found"));
@@ -90,9 +90,7 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
             int playerId = playerIds.get(playerUuid);
 
             // 在主线程中发送欢迎消息
-            Bukkit.getScheduler().runTask(this, () -> {
-                player.sendMessage(ChatColor.GREEN + getLang("welcome_message").replace("{id}", String.valueOf(playerId)));
-            });
+            Bukkit.getScheduler().runTask(this, () -> player.sendMessage(ChatColor.GREEN + getLang("welcome_message").replace("{id}", String.valueOf(playerId))));
         });
     }
 
@@ -119,7 +117,7 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
         playersConfig = YamlConfiguration.loadConfiguration(playersFile);
 
         // 初始化 lang.yml
-        langFile = new File(getDataFolder(), "lang.yml");
+        File langFile = new File(getDataFolder(), "lang.yml");
         if (!langFile.exists()) {
             saveResource("lang.yml", false);
         }
@@ -132,7 +130,7 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
             playersConfig.save(playersFile);
         } catch (IOException e) {
             getLogger().severe("无法保存玩家数据到 players.yml！");
-            e.printStackTrace();
+            getLogger().severe("Error saving player data: " + e.getMessage());
         }
     }
 
@@ -157,25 +155,25 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
         }
 
         @Override
-        public String getIdentifier() {
+        public @NotNull String getIdentifier() {
             return "playerid"; // 占位符标识符
         }
 
         @Override
-        public String getAuthor() {
+        public @NotNull String getAuthor() {
             return plugin.getDescription().getAuthors().toString();
         }
 
         @Override
-        public String getVersion() {
+        public @NotNull String getVersion() {
             return plugin.getDescription().getVersion();
         }
 
         // 处理占位符请求
         @Override
-        public String onPlaceholderRequest(Player player, String params) {
+        public String onPlaceholderRequest(Player player, @NotNull String params) {
             if (player == null) {
-                return "None";
+                return "";
             }
 
             if (params.equalsIgnoreCase("id")) {
