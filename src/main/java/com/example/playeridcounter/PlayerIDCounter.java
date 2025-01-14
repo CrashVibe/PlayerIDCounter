@@ -19,26 +19,42 @@ import java.util.UUID;
 
 public class PlayerIDCounter extends JavaPlugin implements Listener {
 
-    // 文件对象，用于存储玩家数据和语言文件
+    // 单例实例，方便外部访问插件方法
+    private static PlayerIDCounter instance;
+
+    // 玩家数据文件和语言文件配置对象
     private File playersFile;
     private FileConfiguration playersConfig;
     private FileConfiguration langConfig;
 
-    // 存储玩家ID的映射表，UUID对应玩家ID
+    // 映射表
     private HashMap<UUID, Integer> playerIds;
-    // 下一个可用的ID
+
+    // 可分配ID
     private int nextId;
+
+    // 根据UUID获取玩家ID
+    public static int getPlayerId(UUID uuid) {
+        return instance.playerIds.getOrDefault(uuid, -1); // 如果未找到返回-1
+    }
+
+    // 从语言配置文件中获取翻译文本
+    public static String getLang(String key) {
+        return ChatColor.translateAlternateColorCodes('&', instance.langConfig.getString(key, key));
+    }
 
     @Override
     public void onEnable() {
-        // 初始化玩家数据和语言文件
+        // 设置单例实例
+        instance = this;
+
         initFiles();
 
+        // 初始化玩家ID映射表和下一个ID
         this.playerIds = new HashMap<>();
-        // 从配置文件读取下一个ID，如果没有则默认设置为1
-        this.nextId = playersConfig.getInt("next-id", 1);
+        this.nextId = playersConfig.getInt("next-id", 1); // 从配置文件读取下一个ID，默认值为1
 
-        // 加载现有玩家 ID
+        // 加载已有玩家的ID数据
         for (String key : playersConfig.getKeys(false)) {
             if (key.equals("next-id")) continue; // 跳过 "next-id" 配置项
             UUID uuid = UUID.fromString(key);
@@ -46,27 +62,27 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
             playerIds.put(uuid, id);
         }
 
-        // 注册事件监听器，使插件能够响应玩家加入事件
+        // 注册
         Bukkit.getPluginManager().registerEvents(this, this);
-
-        // 如果 PlaceholderAPI 插件可用，注册扩展
+        // PlaceholderAPI
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new IDPlaceholderExpansion(this).register();
         } else {
-            getLogger().warning(getLang("papi_not_found"));
+            getLogger().warning(getLang("papi_not_found")); // 提示 PlaceholderAPI 未找到
         }
 
+        // 插件启动完成提示
         getLogger().info(getLang("plugin_enabled"));
     }
 
     @Override
     public void onDisable() {
-        // 在插件禁用时保存玩家数据
+        // 插件关闭时保存玩家数据
         savePlayerData();
         getLogger().info(getLang("plugin_disabled"));
     }
 
-    // 玩家加入事件处理器
+    // 玩家加入服务器事件处理
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
@@ -74,15 +90,15 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
 
         // 异步处理玩家ID分配
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            // 如果玩家没有ID，则为其分配一个新的ID
+            // 如果玩家没有ID，则分配一个新ID
             if (!playerIds.containsKey(playerUuid)) {
-                synchronized (this) { // 使用同步锁避免并发冲突
+                synchronized (this) { // 加锁防止并发问题
                     if (!playerIds.containsKey(playerUuid)) {
                         playerIds.put(playerUuid, nextId);
                         playersConfig.set(playerUuid.toString(), nextId);
-                        nextId++; // 增加ID值
+                        nextId++;
                         playersConfig.set("next-id", nextId);
-                        savePlayerData(); // 保存更新后的玩家数据
+                        savePlayerData();
                     }
                 }
             }
@@ -90,21 +106,14 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
             int playerId = playerIds.get(playerUuid);
 
             // 在主线程中发送欢迎消息
-            Bukkit.getScheduler().runTask(this, () -> player.sendMessage(ChatColor.GREEN + getLang("welcome_message").replace("{id}", String.valueOf(playerId))));
+            Bukkit.getScheduler().runTask(this, () -> {
+                String welcomeMessage = getLang("welcome_message").replace("{id}", String.valueOf(playerId));
+                player.sendMessage(ChatColor.GREEN + welcomeMessage);
+            });
         });
     }
 
-    // 获取玩家ID，根据UUID查询，如果没有找到则返回-1
-    public int getPlayerId(UUID uuid) {
-        return playerIds.getOrDefault(uuid, -1);
-    }
-
-    // 从语言配置文件中获取翻译文本
-    public String getLang(String key) {
-        return ChatColor.translateAlternateColorCodes('&', langConfig.getString(key, key));
-    }
-
-    // 初始化所有必要的文件，包括 config.yml, players.yml, lang.yml
+    // 初始化所有配置文件
     private void initFiles() {
         // 初始化 config.yml
         saveDefaultConfig();
@@ -112,14 +121,14 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
         // 初始化 players.yml
         playersFile = new File(getDataFolder(), "players.yml");
         if (!playersFile.exists()) {
-            saveResource("players.yml", false);
+            saveResource("players.yml", false); // 如果文件不存在，从插件JAR中复制默认文件
         }
         playersConfig = YamlConfiguration.loadConfiguration(playersFile);
 
         // 初始化 lang.yml
         File langFile = new File(getDataFolder(), "lang.yml");
         if (!langFile.exists()) {
-            saveResource("lang.yml", false);
+            saveResource("lang.yml", false); // 如果文件不存在，从插件JAR中复制默认文件
         }
         langConfig = YamlConfiguration.loadConfiguration(langFile);
     }
@@ -127,31 +136,30 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
     // 保存玩家数据到 players.yml 文件
     private void savePlayerData() {
         try {
-            playersConfig.save(playersFile);
+            playersConfig.save(playersFile); // 保存配置文件
         } catch (IOException e) {
             getLogger().severe("无法保存玩家数据到 players.yml！");
             getLogger().severe("Error saving player data: " + e.getMessage());
         }
     }
 
-    // PlaceholderAPI 扩展，用于显示玩家ID
+    // PlaceholderAPI 扩展类，用于提供玩家ID占位符
     public static class IDPlaceholderExpansion extends PlaceholderExpansion {
 
         private final PlayerIDCounter plugin;
 
-        // 构造方法，传入插件实例
         public IDPlaceholderExpansion(PlayerIDCounter plugin) {
             this.plugin = plugin;
         }
 
         @Override
         public boolean persist() {
-            return true; // 该扩展会在重载后继续存在
+            return true; // 占位符扩展在重载后继续存在
         }
 
         @Override
         public boolean canRegister() {
-            return true;
+            return true; // 允许注册
         }
 
         @Override
@@ -161,26 +169,27 @@ public class PlayerIDCounter extends JavaPlugin implements Listener {
 
         @Override
         public @NotNull String getAuthor() {
-            return plugin.getDescription().getAuthors().toString();
+            return plugin.getDescription().getAuthors().toString(); // 插件作者
         }
 
         @Override
         public @NotNull String getVersion() {
-            return plugin.getDescription().getVersion();
+            return plugin.getDescription().getVersion(); // 插件版本
         }
 
-        // 处理占位符请求
+        // 占位符请求
         @Override
         public String onPlaceholderRequest(Player player, @NotNull String params) {
             if (player == null) {
                 return "";
             }
 
+            // 如果占位符参数是 "id"，返回玩家的ID
             if (params.equalsIgnoreCase("id")) {
-                return String.valueOf(plugin.getPlayerId(player.getUniqueId()));
+                return String.valueOf(PlayerIDCounter.getPlayerId(player.getUniqueId()));
             }
 
-            return null;
+            return null; // 都他妈不是就返回 null
         }
     }
 }
