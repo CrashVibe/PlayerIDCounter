@@ -1,5 +1,5 @@
 name: PlayerIDCounter
-version: '1.1'
+version: '1.2'
 main: com.example.playeridcounter.PlayerIDCounter
 api-version: '1.21'
 load: STARTUP
