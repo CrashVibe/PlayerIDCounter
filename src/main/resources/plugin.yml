@@ -1,6 +1,6 @@
 name: PlayerIDCounter
-version: '1.2'
+version: '1.3'
 main: com.example.playeridcounter.PlayerIDCounter
-api-version: '1.21'
+api-version: '1.13'
 load: STARTUP
 depend: [ PlaceholderAPI ]
