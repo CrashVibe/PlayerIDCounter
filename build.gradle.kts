@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.3.10"
+    id("com.gradleup.shadow") version "9.3.1"
     `maven-publish`
 }
 
@@ -16,11 +17,18 @@ repositories {
     maven {
         url = uri("https://repo.helpch.at/releases/")
     }
+
+    maven {
+        url = uri("https://repo.tcoded.com/releases/")
+    }
 }
 
 dependencies {
     compileOnly(libs.io.papermc.paper.api)
     compileOnly(libs.me.clip.placeholderapi)
+
+    implementation(libs.de.exlll.configlib.yaml)
+    implementation(libs.com.tcoded.foliaLib)
 }
 
 tasks {
@@ -32,13 +40,18 @@ tasks {
         options.encoding = "UTF-8"
     }
 
-    jar {
-        from(configurations.runtimeClasspath.get().map { zipTree(it) })
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    shadowJar {
+        archiveFileName.set("${rootProject.name}-${project.version}.${archiveExtension.get()}")
+        exclude("META-INF/**")
+        minimize {
+            exclude(dependency("com.tcoded:FoliaLib:.*"))
+        }
+        relocate("de.exlll.configlib", "${project.group}.libs.configlib")
+        relocate("com.tcoded.folialib", "${project.group}.libs.folialib")
     }
 
     build {
-        dependsOn(jar)
+        dependsOn(shadowJar)
     }
 
     kotlin {
