@@ -28,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: PlayerIDCounter
-          path: PlayerIDCounter-*.jar
+          path: build/libs/PlayerIDCounter-*.jar
