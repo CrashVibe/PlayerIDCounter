@@ -4,3 +4,4 @@ main: org.crashvibe.playeridcounter.PlayerIDCounter
 api-version: '1.13'
 load: STARTUP
 depend: [ PlaceholderAPI ]
+folia-support: true
