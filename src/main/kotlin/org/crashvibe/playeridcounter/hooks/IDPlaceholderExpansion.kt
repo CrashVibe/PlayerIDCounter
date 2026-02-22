@@ -4,7 +4,7 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.crashvibe.playeridcounter.PlayerIDCounter
-import org.crashvibe.playeridcounter.util.Util
+import org.crashvibe.playeridcounter.util.getPlayerId
 
 class IDPlaceholderExpansion(private val plugin: PlayerIDCounter) : PlaceholderExpansion() {
 
@@ -34,12 +34,12 @@ class IDPlaceholderExpansion(private val plugin: PlayerIDCounter) : PlaceholderE
         }
 
         if (params.equals("id", ignoreCase = true)) {
-            return Util.getPlayerId(player.uniqueId).toString() // 返回玩家ID
+            return getPlayerId(player.uniqueId).toString() // 返回玩家ID
         }
 
         if (params.matches("\\d".toRegex())) {
             val id = params.toInt()
-            val name: String? = PlayerIDCounter.playerIds
+            val name = PlayerIDCounter.playerIds
                 .entries
                 .firstOrNull { it.value == id }
                 ?.key

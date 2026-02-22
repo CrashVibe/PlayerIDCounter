@@ -1,38 +1,33 @@
 package org.crashvibe.playeridcounter
 
+import com.tcoded.folialib.FoliaLib
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger
 import org.bukkit.Bukkit
-import org.bukkit.configuration.file.FileConfiguration
-import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
+import org.crashvibe.playeridcounter.config.Config
+import org.crashvibe.playeridcounter.config.Config.getLang
 import org.crashvibe.playeridcounter.hooks.IDPlaceholderExpansion
 import org.crashvibe.playeridcounter.listener.PlayerListener
-import org.crashvibe.playeridcounter.util.Util.getLang
-import java.io.File
-import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
-class PlayerIDCounter : JavaPlugin(), Listener {
-
-    lateinit var playersConfigFile: File
-    lateinit var playersConfig: FileConfiguration
-    lateinit var langConfig: FileConfiguration
+class PlayerIDCounter : JavaPlugin() {
 
     override fun onEnable() {
         instance = this
+        foliaLib = FoliaLib(instance)
 
-        initFiles() // 初始化文件
+        Config.init(dataPath) // 初始化文件
 
         playerIds = ConcurrentHashMap<UUID, Int>()
-        nextId = AtomicInteger(playersConfig.getInt("next-id", 1))
+        nextId = AtomicInteger(Config.playersConfig.getInt("next-id", 1))
 
-        playersConfig.getKeys(false).forEach(Consumer { key: String? ->
+        Config.playersConfig.getKeys(false).forEach(Consumer { key: String ->
             if (key != "next-id") {
                 val uuid = UUID.fromString(key)
-                val id = playersConfig.getInt(key!!)
+                val id = Config.playersConfig.getInt(key)
                 playerIds[uuid] = id // 加载玩家ID
             }
         })
@@ -42,43 +37,22 @@ class PlayerIDCounter : JavaPlugin(), Listener {
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             IDPlaceholderExpansion(instance).register() // 注册PlaceholderAPI
         } else {
-            logger.warning(getLang("papi_not_found"))
+            LOGGER.warn(getLang(Config.langData.papiNotFound))
         }
 
-        logger.info(getLang("plugin_enabled")) // 插件启用
+        LOGGER.info(getLang(Config.langData.pluginEnabled)) // 插件启用
     }
 
     override fun onDisable() {
-        savePlayerData() // 保存玩家数据
-        logger.info(getLang("plugin_disabled")) // 插件禁用
-    }
-
-    private fun initFiles() {
-        saveDefaultConfig()
-
-        playersConfigFile = File(dataFolder, "players.yml")
-        if (!playersConfigFile.exists()) {
-            saveResource("players.yml", false) // 初始化players.yml
-        }
-        playersConfig = YamlConfiguration.loadConfiguration(playersConfigFile)
-
-        val langFile = File(dataFolder, "lang.yml")
-        if (!langFile.exists()) {
-            saveResource("lang.yml", false) // 初始化lang.yml
-        }
-        langConfig = YamlConfiguration.loadConfiguration(langFile)
-    }
-
-    fun savePlayerData() {
-        try {
-            playersConfig.save(playersConfigFile) // 保存玩家数据
-        } catch (e: IOException) {
-            logger.severe("无法保存玩家数据到 players.yml！错误: " + e.message)
-        }
+        Config.savePlayerData() // 保存玩家数据
+        LOGGER.info(getLang(Config.langData.pluginDisabled)) // 插件禁用
     }
 
     companion object {
+        val LOGGER: ComponentLogger = ComponentLogger.logger(PlayerIDCounter::class.java.simpleName)
+
         lateinit var instance: PlayerIDCounter
+        lateinit var foliaLib: FoliaLib
 
         lateinit var playerIds: ConcurrentHashMap<UUID, Int>
         lateinit var nextId: AtomicInteger
