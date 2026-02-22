@@ -1,0 +1,7 @@
+[versions]
+me-clip-placeholderapi = "2.12.2"
+io-papermc-paper-api = "1.21.11-R0.1-SNAPSHOT"
+
+[libraries]
+me-clip-placeholderapi = { module = "me.clip:placeholderapi", version.ref = "me-clip-placeholderapi" }
+io-papermc-paper-api = { module = "io.papermc.paper:paper-api", version.ref = "io-papermc-paper-api" }

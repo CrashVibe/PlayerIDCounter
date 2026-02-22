@@ -1,6 +1,6 @@
 name: PlayerIDCounter
-version: ${project.version}
-main: com.example.playeridcounter.PlayerIDCounter
+version: ${version}
+main: org.crashvibe.playeridcounter.PlayerIDCounter
 api-version: '1.13'
 load: STARTUP
 depend: [ PlaceholderAPI ]
