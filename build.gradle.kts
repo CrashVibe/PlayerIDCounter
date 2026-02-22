@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "org.crashvibe.playeridcounter"
-version = "1.4"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
